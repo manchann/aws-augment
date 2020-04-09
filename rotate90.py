@@ -1,5 +1,6 @@
 import boto3
 from PIL import Image, ImageFilter
+import json
 
 return_bucket_name = 'aug-module'
 
@@ -20,7 +21,8 @@ def augmentation(file_name, image_path):
 
 
 def handler(event, context):
-    for record in event['Records']:
+    records = json.loads(event['Records'][0]['Sns']['Message'])
+    for record in records['Records']:
         bucket_name = record['s3']['bucket']['name']
         object_path = record['s3']['object']['key']
         tmp = '/tmp/' + object_path
