@@ -1,8 +1,9 @@
 import boto3
 from PIL import Image, ImageFilter
+import time
 
 bucket_name = 'pre-image-group'
-return_bucket_name = 'aug-module'
+return_bucket_name = 'aug-ec2'
 
 TMP = "/tmp/"
 
@@ -45,16 +46,19 @@ def rotate(image, file_name):
 def filter(image, file_name):
     path_list = []
     path = TMP + "blur-" + file_name
+    image = image.convert('RGB')
     img = image.filter(ImageFilter.BLUR)
     img.save(path)
     path_list.append(path)
 
     path = TMP + "contour-" + file_name
+    image = image.convert('RGB')
     img = image.filter(ImageFilter.CONTOUR)
     img.save(path)
     path_list.append(path)
 
     path = TMP + "sharpen-" + file_name
+    image = image.convert('RGB')
     img = image.filter(ImageFilter.SHARPEN)
     img.save(path)
     path_list.append(path)
@@ -64,6 +68,7 @@ def filter(image, file_name):
 
 def gray_scale(image, file_name):
     path = TMP + "gray-scale-" + file_name
+    image = image.convert('RGB')
     img = image.convert('L')
     img.save(path)
     return [path]
@@ -96,15 +101,16 @@ def handler(event):
     s3.download_file(bucket_name, object_path, tmp)
     return_path = augmentation(object_path, tmp)
     for upload in return_path:
-        print(upload)
         s3.upload_file(upload, return_bucket_name, upload.split('/')[2])
 
 
+start = time.time()
 bucket = boto3.resource('s3').Bucket(bucket_name)
 for bucket_object in bucket.objects.all():
-    print(bucket_object)
     event = {
         'bucket_name': bucket_name,
         'object_path': bucket_object.key,
     }
     handler(event)
+end = time.time()
+print('걸린 시간: ', end - start)
