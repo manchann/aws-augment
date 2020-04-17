@@ -98,19 +98,31 @@ def handler(event):
     object_path = event['object_path']
     tmp = '/tmp/' + object_path
     s3 = boto3.client('s3')
+    s3_start = time.time()
     s3.download_file(bucket_name, object_path, tmp)
+    aug_start = time.time()
     return_path = augmentation(object_path, tmp)
+    upload_start = time.time()
     for upload in return_path:
         s3.upload_file(upload, return_bucket_name, upload.split('/')[2])
+    upload_end = time.time()
+    return aug_start - s3_start, upload_start - aug_start, upload_end - upload_start
 
 
 start = time.time()
 bucket = boto3.resource('s3').Bucket(bucket_name)
+s3_time, aug_time, upload_time = 0, 0, 0
 for bucket_object in bucket.objects.all():
     event = {
         'bucket_name': bucket_name,
         'object_path': bucket_object.key,
     }
-    handler(event)
+    s3_t, aug_t, upload_t = handler(event)
+    s3_time += s3_t
+    aug_time += aug_t
+    upload_time += upload_t
 end = time.time()
-print('걸린 시간: ', end - start)
+print('s3_time: ', s3_time)
+print('aug_time: ', aug_time)
+print('upload_time', upload_time)
+print('total duration: ', end - start)
