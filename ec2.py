@@ -1,11 +1,23 @@
 import boto3
 from PIL import Image, ImageFilter
 import time
+import json
+import decimal
 
 bucket_name = 'pre-image-group'
 return_bucket_name = 'aug-ec2'
 
 TMP = "/tmp/"
+
+
+class DecimalEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, decimal.Decimal):
+            if abs(o) % 1 > 0:
+                return float(o)
+            else:
+                return int(o)
+        return super(DecimalEncoder, self).default(o)
 
 
 def flip(image, file_name):
@@ -122,6 +134,22 @@ for bucket_object in bucket.objects.all():
     aug_time += aug_t
     upload_time += upload_t
 end = time.time()
+
+dynamodb = boto3.resource('dynamodb', region_name='ap-northeast-2')
+table = dynamodb.Table('augmentations')
+
+response = table.put_item(
+    Item={
+        'type': 'ec2',
+        'details': {
+            'type': 't2.micro',
+            's3_time': decimal.Decimal(s3_time),
+            'aug_time': decimal.Decimal(aug_time),
+            'upload_time': decimal.Decimal(upload_time),
+            'total duration': decimal.Decimal(end - start)
+        }
+    }
+)
 print('s3_time: ', s3_time)
 print('aug_time: ', aug_time)
 print('upload_time', upload_time)
