@@ -124,6 +124,7 @@ def handler(event):
 start = time.time()
 bucket = boto3.resource('s3').Bucket(bucket_name)
 s3_time, aug_time, upload_time = 0, 0, 0
+image_count = 0
 for bucket_object in bucket.objects.all():
     event = {
         'bucket_name': bucket_name,
@@ -133,20 +134,21 @@ for bucket_object in bucket.objects.all():
     s3_time += s3_t
     aug_time += aug_t
     upload_time += upload_t
+    image_count += 1
 end = time.time()
 
 dynamodb = boto3.resource('dynamodb', region_name='ap-northeast-2')
-table = dynamodb.Table('augmentations')
+table = dynamodb.Table('ec2')
 
 response = table.put_item(
     Item={
-        'type': 'ec2',
+        'type': 't2.micro',
         'details': {
-            'type': 't2.micro',
             's3_time': decimal.Decimal(s3_time),
             'aug_time': decimal.Decimal(aug_time),
             'upload_time': decimal.Decimal(upload_time),
-            'total duration': decimal.Decimal(end - start)
+            'total duration': decimal.Decimal(end - start),
+            'image_count': decimal.Decimal(image_count)
         }
     }
 )
