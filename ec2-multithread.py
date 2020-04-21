@@ -3,6 +3,7 @@ from PIL import Image, ImageFilter
 import time
 import json
 import decimal
+from threading import Thread
 
 bucket_name = 'pre-image-group'
 return_bucket_name = 'aug-ec2'
@@ -105,9 +106,7 @@ def augmentation(file_name, image_path):
     return return_file
 
 
-def handler(event):
-    bucket_name = event['bucket_name']
-    object_path = event['object_path']
+def handler(bucket_name, object_path):
     tmp = '/tmp/' + object_path
     s3 = boto3.client('s3')
     s3_start = time.time()
@@ -115,7 +114,16 @@ def handler(event):
     aug_start = time.time()
     return_path = augmentation(object_path, tmp)
     aug_end = time.time()
-    return aug_start - s3_start, aug_end - aug_start
+    s3_time = aug_start - s3_start
+    aug_time = aug_end - aug_start
+    response = table.put_item(
+        Item={
+            'type': 's3_time',
+            's3_time': decimal.Decimal(s3_time),
+            'aug_time': decimal.Decimal(aug_time),
+        }
+    )
+    print(s3_time, aug_time)
 
 
 start = time.time()
@@ -124,21 +132,18 @@ image_count = 0
 
 dynamodb = boto3.resource('dynamodb', region_name='ap-northeast-2')
 table = dynamodb.Table('ec2')
+threads = []
 for bucket_object in bucket.objects.all():
     event = {
         'bucket_name': bucket_name,
         'object_path': bucket_object.key,
     }
-    s3_time, aug_time = handler(event)
-
-    response = table.put_item(
-        Item={
-            'type': 's3_time',
-            's3_time': decimal.Decimal(s3_time),
-            'aug_time': decimal.Decimal(aug_time),
-        }
-    )
+    t = Thread(target=handler, args=(event['bucket_name'], event['object_path']))
+    t.start()
+    threads.append(t)
     image_count += 1
+for t in threads:
+    t.join()
 end = time.time()
 
 print('total duration: ', end - start)
