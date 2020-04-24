@@ -9,7 +9,7 @@ return_bucket_name = 'aug-module'
 TMP = "/tmp/"
 
 
-def resize(image, file_name):
+def resized(image, file_name):
     path = TMP + "resized-" + file_name
     image.thumbnail((128, 128))
     image.save(path)
@@ -18,15 +18,15 @@ def resize(image, file_name):
 
 def augmentation(file_name, image_path):
     image = Image.open(image_path)
-    ret = resize(image, file_name)
+    ret = resized(image, file_name)
     return ret
 
 
 def handler(event, context):
+    start = time.time()
     records = json.loads(event['Records'][0]['Sns']['Message'])
     s3_time = 0
     aug_time = 0
-    image_name = ''
     for record in records['Records']:
         bucket_name = record['s3']['bucket']['name']
         object_path = record['s3']['object']['key']
@@ -40,16 +40,16 @@ def handler(event, context):
         ret = augmentation(object_path, tmp)
         aug_end = time.time()
         aug_time += aug_end - aug_start
-        s3.upload_file(ret, return_bucket_name, ret.split('/')[2])
-        image_name = object_path
     dynamodb = boto3.resource('dynamodb', region_name='ap-northeast-2')
-    table = dynamodb.Table('lambdas')
-
+    table = dynamodb.Table('lambda')
+    end = time.time()
     response = table.put_item(
         Item={
+            'id': decimal.Decimal(time.time()),
             'type': 'resized',
-            'name': image_name,
             'details': {
+                'start_time': decimal.Decimal(start),
+                'end_time': decimal.Decimal(end),
                 's3_time': decimal.Decimal(s3_time),
                 'aug_time': decimal.Decimal(aug_time),
             }
