@@ -14,3 +14,5 @@ for res in response['Items']:
     print(res)
 
 print('총 걸린 시간:', end_time - start_time)
+
+

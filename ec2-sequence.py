@@ -123,22 +123,33 @@ bucket = boto3.resource('s3').Bucket(bucket_name)
 image_count = 0
 
 dynamodb = boto3.resource('dynamodb', region_name='ap-northeast-2')
-table = dynamodb.Table('ec2')
+table = dynamodb.Table('ec2-s3-aug')
 for bucket_object in bucket.objects.all():
     event = {
         'bucket_name': bucket_name,
         'object_path': bucket_object.key,
     }
     s3_time, aug_time = handler(event)
-
-    response = table.put_item(
-        Item={
-            'type': 's3_time',
-            's3_time': decimal.Decimal(s3_time),
-            'aug_time': decimal.Decimal(aug_time),
-        }
-    )
+    #
+    # response = table.put_item(
+    #     Item={
+    #         'id': decimal.Decimal(time.time()),
+    #         'type': 't2.micro',
+    #         's3_time': decimal.Decimal(s3_time),
+    #         'aug_time': decimal.Decimal(aug_time),
+    #     }
+    # )
     image_count += 1
 end = time.time()
 
 print('total duration: ', end - start)
+
+table = dynamodb.Table('ec2')
+table.put_item(
+    Item={
+        'instance': 't2.micro',
+        'type': 'sequence',
+        'image_count': decimal.Decimal(image_count),
+        'duration': decimal.Decimal(end - start)
+    }
+)
