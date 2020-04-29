@@ -26,21 +26,19 @@ def augmentation(file_name, image_path):
 def handler(event, context):
     start = time.time()
     records = json.loads(event['Records'][0]['Sns']['Message'])
-    s3_time = 0
-    aug_time = 0
-    for record in records['Records']:
-        bucket_name = record['s3']['bucket']['name']
-        object_path = record['s3']['object']['key']
-        tmp = '/tmp/' + object_path
-        s3_start = time.time()
-        s3 = boto3.client('s3')
-        s3.download_file(bucket_name, object_path, tmp)
-        s3_end = time.time()
-        s3_time += s3_end - s3_start
-        aug_start = time.time()
-        ret = augmentation(object_path, tmp)
-        aug_end = time.time()
-        aug_time += aug_end - aug_start
+    bucket_name = records['bucket_name']
+    object_path = records['object_path']
+    tmp = '/tmp/' + object_path
+    s3_start = time.time()
+    s3 = boto3.client('s3')
+    s3.download_file(bucket_name, object_path, tmp)
+    s3_end = time.time()
+    s3_time = s3_end - s3_start
+    aug_start = time.time()
+    ret = augmentation(object_path, tmp)
+    aug_end = time.time()
+    aug_time = aug_end - aug_start
+
     dynamodb = boto3.resource('dynamodb', region_name='ap-northeast-2')
     table = dynamodb.Table('lambda')
     end = time.time()
