@@ -12,7 +12,7 @@ end_time = 0
 num = 0
 ret = []
 for res in response['Items']:
-    if(res['type'] != 'total'):
+    if(res['type'] == 'total'):
         start_time = min(start_time, res['details']['start_time'])
         start_time_max = max(start_time_max, res['details']['start_time'])
         end_time = max(end_time, res['details']['end_time'])
