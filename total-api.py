@@ -97,17 +97,26 @@ def sharpen(image, file_name):
 
 def augmentation(file_name, image_path):
     return_file = []
-    image = Image.open(image_path)
-    t1 = Thread(target=blur, args=(image, file_name))
-    t2 = Thread(target=contour, args=(image, file_name))
-    t3 = Thread(target=flip_lr, args=(image, file_name))
-    t4 = Thread(target=flip_tb, args=(image, file_name))
-    t5 = Thread(target=gray_scale, args=(image, file_name))
-    t6 = Thread(target=resized, args=(image, file_name))
-    t7 = Thread(target=rotate90, args=(image, file_name))
-    t8 = Thread(target=rotate180, args=(image, file_name))
-    t9 = Thread(target=rotate270, args=(image, file_name))
-    t10 = Thread(target=sharpen, args=(image, file_name))
+    image1 = Image.open(image_path)
+    image2 = Image.open(image_path)
+    image3 = Image.open(image_path)
+    image4 = Image.open(image_path)
+    image5 = Image.open(image_path)
+    image6 = Image.open(image_path)
+    image7 = Image.open(image_path)
+    image8 = Image.open(image_path)
+    image9 = Image.open(image_path)
+    image10 = Image.open(image_path)
+    t1 = Thread(target=blur, args=(image1, file_name))
+    t2 = Thread(target=contour, args=(image2, file_name))
+    t3 = Thread(target=flip_lr, args=(image3, file_name))
+    t4 = Thread(target=flip_tb, args=(image4, file_name))
+    t5 = Thread(target=gray_scale, args=(image5, file_name))
+    t6 = Thread(target=resized, args=(image6, file_name))
+    t7 = Thread(target=rotate90, args=(image7, file_name))
+    t8 = Thread(target=rotate180, args=(image8, file_name))
+    t9 = Thread(target=rotate270, args=(image9, file_name))
+    t10 = Thread(target=sharpen, args=(image10, file_name))
     t1.start()
     t2.start()
     t3.start()
@@ -136,10 +145,9 @@ def augmentation(file_name, image_path):
 def handler(event, context):
     start = time.time()
     print(event)
-    records = json.loads(event['Records'][0]['Sns']['Message'])
 
-    bucket_name = records['bucket_name']
-    object_path = records['object_path']
+    bucket_name = event['bucket']
+    object_path = event['object']
     tmp = '/tmp/' + object_path
     s3_start = time.time()
     s3 = boto3.client('s3')
