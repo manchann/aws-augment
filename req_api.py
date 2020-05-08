@@ -15,7 +15,7 @@ def make_topic(bucket_name, object_path_key):
         'object_path': object_path_key
     }
     subprocess.check_call(
-        "\curl 'https://2bs4iii4rd.execute-api.ap-northeast-2.amazonaws.com/lambda-test/?bucket=%22'{}'%22&object=%22'{}'%22#'".format(
+        "\curl 'https://2bs4iii4rd.execute-api.ap-northeast-2.amazonaws.com/lambda-test/total/?bucket=%22'{}'%22&object=%22'{}'%22#'".format(
             bucket_name, object_path_key),
         shell=True)
 
